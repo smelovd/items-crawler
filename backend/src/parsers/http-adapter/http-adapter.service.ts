@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { AxiosResponse } from 'axios';
+import cheerio, { CheerioAPI } from 'cheerio';
 
 @Injectable()
 export class HttpAdapter {
@@ -10,13 +11,18 @@ export class HttpAdapter {
 
   async getPage(link: string): Promise<any> {
     try {
-      this.logger.log(`Http request: ${link}`);
       const res: AxiosResponse = await firstValueFrom(
-        this.httpService.get(`${link}`, { fetchOptions: {} }),
+        this.httpService.get(`${link}`, {
+          // timeout: 20000,
+        }),
       );
       return res.data;
-    } catch (e) {
-      this.logger.warn('Http request error: ' + e.message);
+    } catch (error) {
+      this.logger.warn('Http request error: ' + error);
     }
+  }
+
+  async getCheerioApiPage(link: any): Promise<CheerioAPI> {
+    return cheerio.load(await this.getPage(link));
   }
 }

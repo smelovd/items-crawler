@@ -1,7 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Item } from './entities/item.entity';
 import { Repository } from 'typeorm';
+import { PaginateResponse } from '../models/responses/paginate.response';
 
 @Injectable()
 export class ItemsService {
@@ -16,7 +17,28 @@ export class ItemsService {
     this.logger.log(`Saved new items batch with ${items.length} items`);
   }
 
-  findAll(): Promise<Item[]> {
-    return this.usersRepository.find();
+  async findAllPaginate(
+    currentPage: number,
+    countPerPage: number,
+  ): Promise<PaginateResponse<Item>> {
+    const [result, total]: [Item[], number] =
+      await this.usersRepository.findAndCount({
+        skip: (currentPage - 1) * countPerPage,
+        take: countPerPage,
+      });
+    const totalPages = Math.ceil(total / countPerPage);
+
+    if (currentPage > totalPages) {
+      throw new BadRequestException("Page doesn't exist");
+    }
+
+    return {
+      content: result,
+      meta: {
+        countPerPage: countPerPage,
+        currentPage: currentPage,
+        totalPages: totalPages,
+      },
+    };
   }
 }
