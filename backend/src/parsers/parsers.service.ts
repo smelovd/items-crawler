@@ -10,7 +10,7 @@ export class ParsersService {
   ) {}
 
   onModuleInit(): void {
-    // this.rozetkaParserService.startParsing(true);
-    // this.telemartParserService.startParsing(true);
+    this.rozetkaParserService.startParsing(true);
+    this.telemartParserService.startParsing(true);
   }
 }
