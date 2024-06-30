@@ -12,6 +12,6 @@ export class ItemsController {
   findAllPaginate(
     @Query() request: PaginateRequest,
   ): Promise<PaginateResponse<Item>> {
-    return this.itemsService.findAllPaginate(request.page, request.count);
+    return this.itemsService.findAllPaginate(request.page || 1, request.count || 10);
   }
 }

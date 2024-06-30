@@ -58,6 +58,10 @@ export class TelemartParserService implements Parser {
 
       if (Number.isNaN(pagesCount)) {
         const itemsBatch: Item[] = this.mapItems($, category.title);
+        if (fullLoad) {
+          await this.loadFull(itemsBatch);
+        }
+
         await this.itemsService.saveAll(itemsBatch);
         this.logger.log(`Parsed category by link: ${category.link}`);
         return;
@@ -76,9 +80,8 @@ export class TelemartParserService implements Parser {
 
         const itemsBatch: Item[] = (
           await Promise.all(
-            links.map(
-              async (link: string): Promise<Item[]> =>
-                await this.getItemsFromPage(link, fullLoad, category.title),
+            links.map((link: string): Promise<Item[]> =>
+                this.getItemsFromPage(link, fullLoad, category.title),
             ),
           )
         ).flat();
@@ -153,7 +156,7 @@ export class TelemartParserService implements Parser {
           .find('.product-short-char__item__value')
           .text()
           .trim();
-        description.push(`${label} : ${value}`);
+        description.push(`${label} ${value}`);
       });
     return description.join(', ');
   }
@@ -170,12 +173,10 @@ export class TelemartParserService implements Parser {
 
   private async loadFull(items: Item[]): Promise<void> {
     for (let i: number = 0; i < items.length; i += this.batchPageSize) {
-      const itemsBatch: Item[] = items.slice(i, i + this.batchPageSize);
+      const itemsBatch: Item[] = items.copyWithin(i, i + this.batchPageSize);
 
       await Promise.all(
-        itemsBatch.map((item: Item) => {
-          this.setSpecification(item);
-        }),
+        itemsBatch.map((item: Item) => this.setSpecification(item)),
       );
     }
   }
@@ -214,6 +215,7 @@ export class TelemartParserService implements Parser {
         specifications[categoryTitle] = category;
       },
     );
+
     item.specifications = JSON.stringify(specifications);
   }
 }

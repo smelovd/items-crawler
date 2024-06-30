@@ -21,12 +21,13 @@ export class ItemsService {
     currentPage: number,
     countPerPage: number,
   ): Promise<PaginateResponse<Item>> {
+    const skip: number = (currentPage - 1) * countPerPage;
     const [result, total]: [Item[], number] =
       await this.usersRepository.findAndCount({
-        skip: (currentPage - 1) * countPerPage,
+        skip: skip,
         take: countPerPage,
       });
-    const totalPages = Math.ceil(total / countPerPage);
+    const totalPages: number = Math.ceil(total / countPerPage);
 
     if (currentPage > totalPages) {
       throw new BadRequestException("Page doesn't exist");
