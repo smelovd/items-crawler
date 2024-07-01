@@ -9,17 +9,22 @@ import { Category } from '../../items/dtos/category.dto';
 
 @Injectable()
 export class RozetkaParserService implements Parser {
-  private readonly batchPageSize: number = parseInt(
-    process.env.BATCH_PAGE_SIZE,
-  );
-  private readonly batchSize: number = parseInt(process.env.BATCH_SIZE);
+  private readonly batchSizeItemsRequests: number;
+  private readonly batchSizePagesToParse: number;
   private readonly baseUrl: string = 'https://rozetka.com.ua/';
   private readonly logger = new Logger(RozetkaParserService.name);
 
   constructor(
     private readonly httpAdapter: HttpAdapter,
     private readonly itemsService: ItemsService,
-  ) {}
+  ) {
+    this.batchSizePagesToParse = parseInt(
+      process.env.ROZETKA_BATCH_SIZE_PAGES_TO_PARSE,
+    );
+    this.batchSizeItemsRequests = parseInt(
+      process.env.ROZETKA_BATCH_SIZE_ITEMS_TO_PARSE,
+    );
+  }
 
   async startParsing(fullLoad: boolean): Promise<void> {
     this.logger.log(`Start parsing rozetka`);
@@ -86,7 +91,7 @@ export class RozetkaParserService implements Parser {
       );
       await this.itemsService.saveAll(itemsBatch);
 
-      i += this.batchSize;
+      i += this.batchSizePagesToParse;
     }
     this.logger.log(`Parsed category by link: ${category.link}`);
   }
@@ -97,7 +102,7 @@ export class RozetkaParserService implements Parser {
     end: number,
   ): string[] {
     const links = [];
-    for (let j = 0; j < this.batchSize && start <= end; j++, start++) {
+    for (let j = 0; j < this.batchSizePagesToParse && start <= end; j++, start++) {
       links.push(`${baseLink}page=${start}`);
     }
     return links;
@@ -147,8 +152,8 @@ export class RozetkaParserService implements Parser {
   }
 
   private async loadFull(items: Item[]): Promise<void> {
-    for (let i: number = 0; i < items.length; i += this.batchPageSize) {
-      const itemsBatch: Item[] = items.slice(i, i + this.batchPageSize);
+    for (let i: number = 0; i < items.length; i += this.batchSizeItemsRequests) {
+      const itemsBatch: Item[] = items.slice(i, i + this.batchSizeItemsRequests);
 
       await Promise.all(
         itemsBatch.map((item) =>

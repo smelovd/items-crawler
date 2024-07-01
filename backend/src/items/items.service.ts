@@ -14,7 +14,7 @@ export class ItemsService {
 
   async saveAll(items: Item[]): Promise<void> {
     await this.usersRepository.insert(items);
-    this.logger.log(`Saved new items batch with ${items.length} items`);
+    this.logger.log(`Saved ${items.length} items`);
   }
 
   async findAllPaginate(currentPage: number, countPerPage: number) {

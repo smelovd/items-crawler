@@ -9,17 +9,22 @@ import { Category } from '../../items/dtos/category.dto';
 
 @Injectable()
 export class TelemartParserService implements Parser {
-  private readonly batchPageSize: number = parseInt(
-    process.env.BATCH_PAGE_SIZE,
-  );
-  private readonly batchSize: number = parseInt(process.env.BATCH_SIZE) * 2;
+  private readonly batchSizeItemsToParse: number;
+  private readonly batchSizePagesToParse: number;
   private readonly baseUrl: string = 'https://telemart.ua/ua';
   private readonly logger = new Logger(TelemartParserService.name);
 
   constructor(
     private readonly httpAdapter: HttpAdapter,
     private readonly itemsService: ItemsService,
-  ) {}
+  ) {
+    this.batchSizePagesToParse = parseInt(
+      process.env.TELEMART_BATCH_SIZE_PAGES_TO_PARSE,
+    );
+    this.batchSizeItemsToParse = parseInt(
+      process.env.TELEMART_BATCH_SIZE_ITEMS_TO_PARSE,
+    );
+  }
 
   async startParsing(fullLoad: boolean): Promise<void> {
     this.logger.log('Start parsing Telemart');
@@ -73,6 +78,8 @@ export class TelemartParserService implements Parser {
         ).flat();
 
         await this.itemsService.saveAll(itemsBatch);
+
+        i += this.batchSizePagesToParse;
       }
 
       this.logger.log(`Parsed category by link: ${category.link}`);
@@ -95,7 +102,7 @@ export class TelemartParserService implements Parser {
     end: number,
   ): string[] {
     const links = [];
-    for (let j = 0; j < this.batchSize && start <= end; j++, start++) {
+    for (let j = 0; j < this.batchSizePagesToParse && start <= end; j++, start++) {
       links.push(`${baseLink}?page=${start}`);
     }
     return links;
@@ -162,8 +169,8 @@ export class TelemartParserService implements Parser {
   }
 
   private async loadFull(items: Item[]): Promise<void> {
-    for (let i = 0; i < items.length; i += this.batchPageSize) {
-      const itemsBatch = items.slice(i, i + this.batchPageSize);
+    for (let i = 0; i < items.length; i += this.batchSizeItemsToParse) {
+      const itemsBatch = items.slice(i, i + this.batchSizeItemsToParse);
       await Promise.all(itemsBatch.map((item) => this.setSpecification(item)));
     }
   }
